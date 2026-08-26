@@ -15,3 +15,9 @@ No GitHub, abra **Settings → Pages**, selecione **Deploy from a branch** e esc
 ## Aviso
 
 Ferramenta exclusivamente educacional. Cartas AIS/AIP, NOTAM, autorizações ATC e procedimentos vigentes sempre prevalecem. O site não deve ser usado para navegação ou operação real.
+
+## Direitos de uso
+
+O código, a curadoria didática, a organização das camadas e a interface deste projeto são protegidos por licença proprietária de uso educacional. Não é permitida a reprodução, redistribuição, publicação de versões derivadas ou exploração comercial sem autorização prévia por escrito do titular.
+
+Dados e publicações de terceiros mantêm seus próprios direitos e regras de uso, incluindo dados cartográficos do OpenStreetMap e documentação oficial AIS/AIP.
