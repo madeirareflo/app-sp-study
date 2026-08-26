@@ -38,7 +38,7 @@
 
   const $ = selector => document.querySelector(selector);
   const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[char]);
-  const index = new Map(), selected = new Map(), active = new Map(), selectionMarkers = new Map();
+  const index = new Map(), selected = new Map(), active = new Map(), operational = new Map(), selectionMarkers = new Map();
   const allProcedures = (window.APP_PROCEDURE_ROUTES || []).filter(item => targetAirports.has(item.airport)).map(item => ({...item, airport:item.airport === "SBAM" ? "SDAI" : item.airport}));
   let spWaypoints = [], labelsVisible = true;
 
@@ -46,7 +46,7 @@
   const map = L.map("map", {zoomControl:false,minZoom:7,maxZoom:14,preferCanvas:true}).setView([-23.45,-46.95],8);
   const base = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap contributors"}).addTo(map);
   const airportsLayer=L.layerGroup().addTo(map), selectionLayer=L.layerGroup().addTo(map), proceduresLayer=L.layerGroup().addTo(map), tmaLayer=L.layerGroup().addTo(map);
-  const color = type => ({SID:"#ff9800",STAR:"#00c7d9",IAC:"#e91e63"}[type] || "#fff");
+  const color = procedure => procedure.type === "SID" ? "#ffb347" : procedure.type === "STAR" ? "#75e36d" : /RNP|RNAV/i.test(procedure.title||"") ? "#bc8cff" : /ILS|LOC/i.test(procedure.title||"") ? "#39c8ff" : "#e86d9f";
   const resolve = id => index.get(String(id).replace(/^H_/,"")) || null;
 
   function airportIcon(item) { return L.divIcon({className:"",iconSize:[1,1],iconAnchor:[0,0],html:`<div class="airport-marker"><i></i><span>${esc(item.id)}</span></div>`}); }
@@ -110,13 +110,55 @@
     document.querySelectorAll("[data-jump]").forEach(button=>button.onclick=()=>{
       const destination=button.dataset.jump;
       document.querySelectorAll(".app-nav-button").forEach(item=>item.classList.toggle("is-active",item.dataset.jump===destination));
+      const operationalPanel=$("#operational-layout");
+      operationalPanel.hidden=destination!=="operational";
       if(destination==="terminal"){panel.classList.remove("is-collapsed");toggle.setAttribute("aria-expanded","true");map.flyTo([-23.45,-46.95],8,{duration:.35});return;}
       if(destination==="map"){map.flyTo([-23.45,-46.95],8,{duration:.35});return;}
+      if(destination==="operational"){panel.classList.remove("is-collapsed");toggle.setAttribute("aria-expanded","true");renderLayoutRunways();updateLayoutStatus();return;}
       const target=destination==="procedures" ? $("#procedures-section") : $("#atcsmac-section");
       target?.scrollIntoView({behavior:"smooth",block:"start"});
       if(destination==="atcsmac") showAtcsmac();
     });
     updateTerminalPanel();
+  }
+
+  const layoutRunways = new Set();
+  const procedureCategory = procedure => procedure.type === "SID" ? "SID" : procedure.type === "STAR" ? "STAR" : /RNP|RNAV/i.test(procedure.title||"") ? "RNP" : /ILS|LOC/i.test(procedure.title||"") ? "ILS" : "IAC";
+  function renderLayoutRunways() {
+    const airportId=$("#layout-airport")?.value || "SBSP";
+    const runways=[...new Set(allProcedures.filter(item=>item.airport===airportId).flatMap(item=>item.runways||[]))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+    if (![...layoutRunways].some(runway=>runways.includes(runway))) { layoutRunways.clear(); runways.forEach(runway=>layoutRunways.add(runway)); }
+    const grid=$("#layout-runway-grid");
+    grid.innerHTML=runways.length ? runways.map(runway=>`<button type="button" class="layout-runway-button ${layoutRunways.has(runway)?"is-active":""}" data-runway="${esc(runway)}">${esc(runway)}</button>`).join("") : '<span class="empty-selection">Sem pista catalogada.</span>';
+    grid.querySelectorAll("[data-runway]").forEach(button=>button.onclick=()=>{const runway=button.dataset.runway;if(layoutRunways.has(runway))layoutRunways.delete(runway);else layoutRunways.add(runway);if(!layoutRunways.size)runways.forEach(item=>layoutRunways.add(item));renderLayoutRunways();updateLayoutStatus();});
+  }
+  function selectedLayoutTypes() { return new Set([...document.querySelectorAll(".layout-type-filter:checked")].map(input=>input.value)); }
+  function matchingOperationalProcedures() {
+    const airportId=$("#layout-airport")?.value || "SBSP", types=selectedLayoutTypes();
+    return allProcedures.filter(procedure=>procedure.airport===airportId && layoutRunways.has((procedure.runways||[])[0]) && types.has(procedureCategory(procedure)));
+  }
+  function updateLayoutStatus() {
+    const status=$("#layout-status"); if(!status)return;
+    const procedures=matchingOperationalProcedures(), confirmed=procedures.reduce((total,procedure)=>total+(routeSequences[procedure.id]||[]).length,0);
+    status.textContent=`${procedures.length} carta(s) selecionada(s) · ${confirmed} trajetória(s) com sequência confirmada.`;
+  }
+  function applyOperationalLayout() {
+    operational.clear();
+    if(!$("#layout-enabled").checked){rebuildRoutes();$("#layout-status").textContent="Camadas operacionais ocultadas.";return;}
+    let rendered=0;
+    matchingOperationalProcedures().forEach(procedure=>(routeSequences[procedure.id]||[]).forEach((_,sequenceNo)=>{operational.set(`operational:${procedure.id}:${sequenceNo}`,{procedure,sequenceNo});rendered++;}));
+    rebuildRoutes();
+    $("#layout-status").textContent=rendered ? `${rendered} trajetória(s) confirmada(s) aplicada(s) ao mapa.` : "Nenhuma trajetória confirmada corresponde à configuração atual; as cartas continuam disponíveis na biblioteca.";
+  }
+  function setupOperationalLayout() {
+    const airport=$("#layout-airport"); if(!airport)return;
+    airport.innerHTML=[...targetAirports].map(id=>{const item=airports.find(entry=>entry.id===id);return `<option value="${id}">${id} — ${esc(item?.name||id)}</option>`;}).join("");
+    airport.onchange=()=>{const procedureAirport=$("#procedure-airport");procedureAirport.value=airport.value;options();layoutRunways.clear();renderLayoutRunways();updateLayoutStatus();};
+    document.querySelectorAll(".layout-type-filter").forEach(input=>input.onchange=updateLayoutStatus);
+    $("#layout-enabled").onchange=()=>{if(!$("#layout-enabled").checked){operational.clear();rebuildRoutes();}updateLayoutStatus();};
+    $("#layout-apply").onclick=applyOperationalLayout;
+    $("#layout-clear").onclick=()=>{operational.clear();rebuildRoutes();$("#layout-status").textContent="Camadas do Mapa IFR removidas.";};
+    renderLayoutRunways();updateLayoutStatus();
   }
   function setupProcedures() {
     const airport=$("#procedure-airport"); airport.innerHTML=[...targetAirports].map(id=>{const item=airports.find(a=>a.id===id);return `<option value="${id}">${id} — ${esc(item?.name||id)}</option>`;}).join("");
@@ -131,7 +173,7 @@
   }
   function rebuildRoutes() {
     proceduresLayer.clearLayers();
-    active.forEach(({procedure,sequenceNo})=>{const sequence=(routeSequences[procedure.id] || [])[sequenceNo];if(!sequence)return;let part=[];const draw=()=>{if(part.length>1)L.polyline(part.map(p=>[p.lat,p.lon]),{color:color(procedure.type),weight:3,opacity:.9}).addTo(proceduresLayer);part=[];};sequence.forEach(id=>{const point=resolve(id);if(!point){draw();return;}part.push(point);L.circleMarker([point.lat,point.lon],{radius:5,color:"#fff",weight:1.5,fillColor:color(procedure.type),fillOpacity:.95}).bindTooltip(point.id,{permanent:labelsVisible,direction:"top",className:"procedure-label"}).on("click",()=>choosePoint(point)).addTo(proceduresLayer);});draw();});
+    new Map([...operational,...active]).forEach(({procedure,sequenceNo})=>{const sequence=(routeSequences[procedure.id] || [])[sequenceNo];if(!sequence)return;let part=[];const draw=()=>{if(part.length>1)L.polyline(part.map(p=>[p.lat,p.lon]),{color:color(procedure),weight:3,opacity:.9}).addTo(proceduresLayer);part=[];};sequence.forEach(id=>{const point=resolve(id);if(!point){draw();return;}part.push(point);L.circleMarker([point.lat,point.lon],{radius:5,color:"#fff",weight:1.5,fillColor:color(procedure),fillOpacity:.95}).bindTooltip(point.id,{permanent:labelsVisible,direction:"top",className:"procedure-label"}).on("click",()=>choosePoint(point)).addTo(proceduresLayer);});draw();});
   }
   function renderActive() {
     const node=$("#active-procedures");if(!active.size){node.innerHTML='<span class="empty-selection">Nenhuma camada ativa.</span>';return;}node.innerHTML=[...active.entries()].map(([key,{procedure,sequenceNo}])=>`<div class="selected-point-row"><span><b>${esc(procedure.title)}</b><br><small>${sequenceNo>=0?`Trajeto ${sequenceNo+1}`:"Sequência pendente"}</small></span><button data-route="${esc(key)}">Remover</button></div>`).join("");node.querySelectorAll("[data-route]").forEach(button=>button.onclick=()=>{active.delete(button.dataset.route);rebuildRoutes();renderActive();});
@@ -143,5 +185,5 @@
   $("#recenter").onclick=()=>map.flyTo([-23.45,-46.95],8,{duration:.5});
   $("#toggleLabels").onclick=()=>{labelsVisible=!labelsVisible;document.querySelectorAll(".airport-marker span").forEach(el=>el.style.display=labelsVisible?"":"none");rebuildRoutes();};
   $("#toggleAtcsmac").onclick=showAtcsmac; $("#openAtcsmac").onclick=showAtcsmac;
-  renderAirports(); buildSearch(); setupProcedures(); setupTerminalPanel(); loadData(); L.control.zoom({position:"bottomleft"}).addTo(map);L.control.layers({"OpenStreetMap":base},{"Aeródromos":airportsLayer,"Pontos selecionados":selectionLayer,"Procedimentos por pista":proceduresLayer,"TMA São Paulo · contexto ATCSMAC":tmaLayer},{position:"topright",collapsed:true}).addTo(map);
+  renderAirports(); buildSearch(); setupProcedures(); setupOperationalLayout(); setupTerminalPanel(); loadData(); L.control.zoom({position:"bottomleft"}).addTo(map);L.control.layers({"OpenStreetMap":base},{"Aeródromos":airportsLayer,"Pontos selecionados":selectionLayer,"Procedimentos por pista":proceduresLayer,"TMA São Paulo · contexto ATCSMAC":tmaLayer},{position:"topright",collapsed:true}).addTo(map);
 })();

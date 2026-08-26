@@ -17,6 +17,7 @@
     <nav class="workspace-nav" aria-label="Navegação rápida">
       <button type="button" class="app-nav-button is-active" data-jump="map">Mapa</button>
       <button type="button" class="app-nav-button" data-jump="terminal">Terminal SP</button>
+      <button type="button" class="app-nav-button" data-jump="operational">Mapa IFR</button>
       <button type="button" class="app-nav-button" data-jump="procedures">Procedimentos</button>
       <button type="button" class="app-nav-button" data-jump="atcsmac">ATCSMAC</button>
     </nav>
@@ -46,6 +47,22 @@
           <div id="terminal-view-content" class="terminal-view-content">
             <p><strong>Comece pelo aeródromo e pela carta.</strong> Use os controles à direita para selecionar uma SID, STAR ou IAC; a camada é desenhada apenas quando a sequência confirmada está disponível.</p>
           </div>
+          <section id="operational-layout" class="operational-layout" hidden aria-label="Configuração do Mapa IFR">
+            <div class="operational-heading"><div><span>MAPA OPERACIONAL</span><h3>Configuração por pista</h3></div><b>IFR</b></div>
+            <label class="operational-label" for="layout-airport">Aeródromo em foco</label>
+            <select id="layout-airport" class="layout-select" aria-label="Aeródromo do mapa IFR"></select>
+            <div id="layout-runway-grid" class="layout-runway-grid" aria-label="Pistas disponíveis"></div>
+            <div class="layout-type-row" aria-label="Tipos de procedimento">
+              <label><input class="layout-type-filter" type="checkbox" value="SID" checked><i class="sid"></i> SID</label>
+              <label><input class="layout-type-filter" type="checkbox" value="STAR" checked><i class="star"></i> STAR</label>
+              <label><input class="layout-type-filter" type="checkbox" value="ILS" checked><i class="ils"></i> ILS</label>
+              <label><input class="layout-type-filter" type="checkbox" value="RNP" checked><i class="rnp"></i> RNP</label>
+            </div>
+            <label class="layout-master-toggle"><input id="layout-enabled" type="checkbox" checked> Exibir camadas confirmadas</label>
+            <div class="layout-actions"><button id="layout-apply" type="button">Aplicar no mapa</button><button id="layout-clear" type="button">Limpar camadas</button></div>
+            <p id="layout-status" class="layout-status">Selecione um aeródromo, pista e tipos de procedimento.</p>
+            <p class="layout-source-note">Somente sequências confirmadas são desenhadas. Cartas sem ordem geográfica permanecem disponíveis na biblioteca, sem linha inventada.</p>
+          </section>
           <div class="terminal-actions"><button type="button" data-jump="procedures">Abrir procedimentos</button><button type="button" data-jump="atcsmac">Ver ATCSMAC</button></div>
         </div>
       </aside>
