@@ -76,6 +76,47 @@
     const procedure=list.find(item=>item.id===select.value)||list[0]; const sequences=routeSequences[procedure?.id] || [];
     transition.innerHTML=sequences.length?sequences.map((_,n)=>`<option value="${n}">Trajeto ${n+1}</option>`).join(""):'<option value="-1">Sequência a confirmar</option>';
     $("#add-procedure").disabled=!procedure;
+    updateTerminalPanel();
+  }
+
+  function terminalViewMarkup(view, airportId, type, count) {
+    const airport = airports.find(item=>item.id===airportId);
+    const airportName = airport?.name || airportId;
+    if (view === "flow") return `<p><strong>Fluxo em foco: ${esc(airportId)}.</strong> ${count} carta(s) ${esc(type)} catalogada(s) para ${esc(airportName)}. As rotas só são desenhadas quando a sequência fixo por fixo foi confirmada; o sistema não inventa ligações.</p>`;
+    if (view === "study") return `<p><strong>Roteiro de estudo.</strong> Selecione aeródromo, tipo e carta; adicione a camada e clique nos fixos para consultar a referência. Em seguida, use a ATCSMAC como apoio de contexto, sempre confrontando com a publicação vigente.</p>`;
+    return `<p><strong>Comece pelo aeródromo e pela carta.</strong> Use os controles à direita para selecionar uma SID, STAR ou IAC; a camada é desenhada apenas quando a sequência confirmada está disponível.</p>`;
+  }
+
+  function updateTerminalPanel() {
+    const airportId = $("#procedure-airport")?.value || "SBSP";
+    const type = $("#procedure-type")?.value || "STAR";
+    const count = allProcedures.filter(item=>item.airport===airportId && item.type===type).length;
+    const airport = airports.find(item=>item.id===airportId);
+    const focusAirport = $("#terminal-airport"), focusCount = $("#terminal-procedure-count"), focusMode = $("#terminal-mode"), content = $("#terminal-view-content");
+    if (focusAirport) focusAirport.textContent = airport ? `${airport.id} · ${airport.name}` : airportId;
+    if (focusCount) focusCount.textContent = String(count);
+    if (focusMode) focusMode.textContent = type;
+    if (content) {
+      const activeTab = document.querySelector(".terminal-tab.is-active")?.dataset.terminalView || "overview";
+      content.innerHTML = terminalViewMarkup(activeTab, airportId, type, count);
+    }
+  }
+
+  function setupTerminalPanel() {
+    const panel=$("#terminal-panel"), toggle=$("#terminal-panel-toggle");
+    if (!panel || !toggle) return;
+    toggle.onclick=()=>{const collapsed=panel.classList.toggle("is-collapsed");toggle.setAttribute("aria-expanded",String(!collapsed));};
+    document.querySelectorAll(".terminal-tab").forEach(button=>button.onclick=()=>{document.querySelectorAll(".terminal-tab").forEach(item=>item.classList.toggle("is-active",item===button));updateTerminalPanel();});
+    document.querySelectorAll("[data-jump]").forEach(button=>button.onclick=()=>{
+      const destination=button.dataset.jump;
+      document.querySelectorAll(".app-nav-button").forEach(item=>item.classList.toggle("is-active",item.dataset.jump===destination));
+      if(destination==="terminal"){panel.classList.remove("is-collapsed");toggle.setAttribute("aria-expanded","true");map.flyTo([-23.45,-46.95],8,{duration:.35});return;}
+      if(destination==="map"){map.flyTo([-23.45,-46.95],8,{duration:.35});return;}
+      const target=destination==="procedures" ? $("#procedures-section") : $("#atcsmac-section");
+      target?.scrollIntoView({behavior:"smooth",block:"start"});
+      if(destination==="atcsmac") showAtcsmac();
+    });
+    updateTerminalPanel();
   }
   function setupProcedures() {
     const airport=$("#procedure-airport"); airport.innerHTML=[...targetAirports].map(id=>{const item=airports.find(a=>a.id===id);return `<option value="${id}">${id} — ${esc(item?.name||id)}</option>`;}).join("");
@@ -102,5 +143,5 @@
   $("#recenter").onclick=()=>map.flyTo([-23.45,-46.95],8,{duration:.5});
   $("#toggleLabels").onclick=()=>{labelsVisible=!labelsVisible;document.querySelectorAll(".airport-marker span").forEach(el=>el.style.display=labelsVisible?"":"none");rebuildRoutes();};
   $("#toggleAtcsmac").onclick=showAtcsmac; $("#openAtcsmac").onclick=showAtcsmac;
-  renderAirports(); buildSearch(); setupProcedures(); loadData(); L.control.zoom({position:"bottomleft"}).addTo(map);L.control.layers({"OpenStreetMap":base},{"Aeródromos":airportsLayer,"Pontos selecionados":selectionLayer,"Procedimentos por pista":proceduresLayer,"TMA São Paulo · contexto ATCSMAC":tmaLayer},{position:"topright",collapsed:true}).addTo(map);
+  renderAirports(); buildSearch(); setupProcedures(); setupTerminalPanel(); loadData(); L.control.zoom({position:"bottomleft"}).addTo(map);L.control.layers({"OpenStreetMap":base},{"Aeródromos":airportsLayer,"Pontos selecionados":selectionLayer,"Procedimentos por pista":proceduresLayer,"TMA São Paulo · contexto ATCSMAC":tmaLayer},{position:"topright",collapsed:true}).addTo(map);
 })();

@@ -12,19 +12,50 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <header class="app-bar">
+    <div class="brand-lockup"><span class="brand-pulse"></span><div><span>AMBIENTE DE ESTUDO</span><strong>APP-SP Study</strong></div></div>
+    <nav class="workspace-nav" aria-label="Navegação rápida">
+      <button type="button" class="app-nav-button is-active" data-jump="map">Mapa</button>
+      <button type="button" class="app-nav-button" data-jump="terminal">Terminal SP</button>
+      <button type="button" class="app-nav-button" data-jump="procedures">Procedimentos</button>
+      <button type="button" class="app-nav-button" data-jump="atcsmac">ATCSMAC</button>
+    </nav>
+    <div class="app-bar-status"><span></span> EDUCAÇÃO · NÃO OPERACIONAL</div>
+  </header>
   <main id="app-layout">
     <section id="map-wrapper" aria-label="Mapa da TMA São Paulo">
       <div id="map"></div>
       <div class="map-title"><span class="live-dot"></span><b>TMA SÃO PAULO</b><small>visualizador didático · base geográfica</small></div>
       <div class="map-tools"><button id="recenter" title="Centralizar TMA São Paulo">⌖</button><button id="toggleLabels" title="Mostrar ou ocultar nomes">Aa</button><button id="toggleAtcsmac" title="Abrir orientação ATCSMAC">ALT</button></div>
       <div class="map-note">Procedimentos e setores usam apenas coordenadas carregadas do acervo. Confirme sempre carta, AIS/AIP e NOTAM vigentes.</div>
+      <aside id="terminal-panel" class="terminal-panel" aria-label="Painel de comando da Terminal SP">
+        <button id="terminal-panel-toggle" type="button" aria-expanded="true" aria-controls="terminal-panel-content" title="Recolher painel da Terminal SP">‹</button>
+        <div id="terminal-panel-content">
+          <div class="terminal-eyebrow"><span></span> TERMINAL EM FOCO</div>
+          <div class="terminal-heading"><div><h2>São Paulo</h2><p>Contexto de estudo · TMA SP</p></div><b>SP</b></div>
+          <div class="terminal-metrics">
+            <div><span>Aeródromo</span><strong id="terminal-airport">SBSP</strong></div>
+            <div><span>Cartas</span><strong id="terminal-procedure-count">—</strong></div>
+            <div><span>Modo</span><strong id="terminal-mode">STAR</strong></div>
+          </div>
+          <div class="terminal-tabs" role="tablist" aria-label="Painéis da Terminal SP">
+            <button type="button" class="terminal-tab is-active" data-terminal-view="overview">Resumo</button>
+            <button type="button" class="terminal-tab" data-terminal-view="flow">Fluxo</button>
+            <button type="button" class="terminal-tab" data-terminal-view="study">Estudo</button>
+          </div>
+          <div id="terminal-view-content" class="terminal-view-content">
+            <p><strong>Comece pelo aeródromo e pela carta.</strong> Use os controles à direita para selecionar uma SID, STAR ou IAC; a camada é desenhada apenas quando a sequência confirmada está disponível.</p>
+          </div>
+          <div class="terminal-actions"><button type="button" data-jump="procedures">Abrir procedimentos</button><button type="button" data-jump="atcsmac">Ver ATCSMAC</button></div>
+        </div>
+      </aside>
     </section>
 
     <aside id="sidebar" aria-label="Controles e detalhes">
       <section class="sidebar-section app-title">
-        <span>VISUALIZADOR DE TRÁFEGO AÉREO</span>
-        <h1>APP-SP Study</h1>
-        <p>Base renovada para a TMA São Paulo.</p>
+        <span>CONSOLE OPERACIONAL · ESTUDO</span>
+        <h1>Terminal SP</h1>
+        <p>Pesquisa, camadas IFR e referências oficiais em uma única estação de estudo.</p>
       </section>
 
       <section class="sidebar-section">
@@ -37,7 +68,7 @@
         <div id="selected-points" class="selected-points"><span class="empty-selection">Nenhum ponto selecionado.</span></div>
       </section>
 
-      <section class="sidebar-section procedure-section">
+      <section id="procedures-section" class="sidebar-section procedure-section">
         <h2>Procedimentos IFR</h2>
         <div class="procedure-controls">
           <select id="procedure-airport" class="search-input-field" aria-label="Aeródromo"></select>
@@ -49,7 +80,7 @@
         <div id="active-procedures" class="selected-points"><span class="empty-selection">Nenhum procedimento ativo.</span></div>
       </section>
 
-      <section class="sidebar-section atcsmac-section">
+      <section id="atcsmac-section" class="sidebar-section atcsmac-section">
         <div class="section-heading"><h2>ATCSMAC · TMA São Paulo</h2><button id="openAtcsmac" type="button" class="text-button">Consultar</button></div>
         <p>Camada de limites da TMA e consulta guiada da Carta de Altitude Mínima de Vigilância ATC.</p>
       </section>
