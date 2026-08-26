@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#121212">
+  <title>Visualizador TMA São Paulo</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="app-layout">
+    <section id="map-wrapper" aria-label="Mapa da TMA São Paulo">
+      <div id="map"></div>
+      <div class="map-title"><span class="live-dot"></span><b>TMA SÃO PAULO</b><small>visualizador didático · base geográfica</small></div>
+      <div class="map-tools"><button id="recenter" title="Centralizar TMA São Paulo">⌖</button><button id="toggleLabels" title="Mostrar ou ocultar nomes">Aa</button><button id="toggleAtcsmac" title="Abrir orientação ATCSMAC">ALT</button></div>
+      <div class="map-note">Procedimentos e setores usam apenas coordenadas carregadas do acervo. Confirme sempre carta, AIS/AIP e NOTAM vigentes.</div>
+    </section>
+
+    <aside id="sidebar" aria-label="Controles e detalhes">
+      <section class="sidebar-section app-title">
+        <span>VISUALIZADOR DE TRÁFEGO AÉREO</span>
+        <h1>APP-SP Study</h1>
+        <p>Base renovada para a TMA São Paulo.</p>
+      </section>
+
+      <section class="sidebar-section">
+        <h2>Pesquisa de pontos</h2>
+        <div class="search-container"><input id="search-input" class="search-input-field" autocomplete="off" placeholder="Aeródromo ou ponto..." aria-label="Buscar ponto"><div id="suggestions-box"></div></div>
+      </section>
+
+      <section class="sidebar-section selected-section">
+        <h2>Pontos selecionados</h2>
+        <div id="selected-points" class="selected-points"><span class="empty-selection">Nenhum ponto selecionado.</span></div>
+      </section>
+
+      <section class="sidebar-section procedure-section">
+        <h2>Procedimentos IFR</h2>
+        <div class="procedure-controls">
+          <select id="procedure-airport" class="search-input-field" aria-label="Aeródromo"></select>
+          <select id="procedure-type" class="search-input-field" aria-label="Tipo de procedimento"><option value="STAR">STAR</option><option value="SID">SID</option><option value="IAC">IAC</option></select>
+          <select id="procedure-select" class="search-input-field" aria-label="Procedimento"></select>
+          <select id="procedure-transition" class="search-input-field" aria-label="Transição"></select>
+          <button id="add-procedure" class="action-btn" type="button">Adicionar procedimento</button>
+        </div>
+        <div id="active-procedures" class="selected-points"><span class="empty-selection">Nenhum procedimento ativo.</span></div>
+      </section>
+
+      <section class="sidebar-section atcsmac-section">
+        <div class="section-heading"><h2>ATCSMAC · TMA São Paulo</h2><button id="openAtcsmac" type="button" class="text-button">Consultar</button></div>
+        <p>Camada de limites da TMA e consulta guiada da Carta de Altitude Mínima de Vigilância ATC.</p>
+      </section>
+
+      <section id="details-panel" aria-live="polite"><div id="details-content"><div class="panel-placeholder"><div class="panel-placeholder-icon">✈</div><p>Selecione um aeródromo, ponto ou procedimento para ver os detalhes documentais.</p></div></div></section>
+      <footer>Ferramenta educacional. AIS/AIP, cartas, NOTAM e instruções vigentes prevalecem.</footer>
+    </aside>
+  </main>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="data/analysis-data.js"></script>
+  <script src="data/procedure-routes.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
