@@ -53,6 +53,12 @@ button,input,select { font:inherit; }
 .operational-heading h3 { margin:3px 0 0; color:#f2fbfd; font-size:13px; }
 .operational-heading b { padding:4px 6px; border:1px solid #2d7484; border-radius:4px; color:#9cf3ff; background:#102f38; font:800 10px/1 ui-monospace,Consolas,monospace; }
 .operational-label { margin:8px 0 5px; color:#9db7bf; }
+.layout-intro { margin:0 0 9px; color:#9db5bd; font-size:10px; line-height:1.35; }
+.tma-runway-config { display:grid; grid-template-columns:repeat(3,1fr); gap:5px; }
+.tma-runway-config label { min-width:0; padding:6px; border:1px solid #345e68; border-radius:5px; background:#13272e; }
+.tma-runway-config span { display:block; margin-bottom:4px; color:#88a5ae; font:800 8px/1 ui-monospace,Consolas,monospace; letter-spacing:.09em; }
+.tma-runway-config select { width:100%; padding:3px; border:1px solid #3f6a75; border-radius:3px; color:#edfbff; background:#0d1d22; font-size:11px; font-weight:800; }
+.layout-config-code { margin:7px 0 9px; padding:6px; border:1px dashed #3d7581; border-radius:4px; color:#9cf3ff; background:#102b33; font:800 10px/1 ui-monospace,Consolas,monospace; text-align:center; letter-spacing:.05em; }
 .layout-select { width:100%; padding:7px; border:1px solid #385d66; border-radius:4px; color:#edf8fa; background:#192b31; font-size:11px; }
 .layout-runway-grid { display:flex; flex-wrap:wrap; gap:5px; margin:9px 0; }
 .layout-runway-button { padding:5px 7px; border:1px solid #3d5861; border-radius:4px; color:#a9c3ca; background:#17262c; cursor:pointer; font:700 10px/1 ui-monospace,Consolas,monospace; }

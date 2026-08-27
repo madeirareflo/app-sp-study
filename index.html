@@ -49,9 +49,15 @@
           </div>
           <section id="operational-layout" class="operational-layout" hidden aria-label="Configuração do Mapa IFR">
             <div class="operational-heading"><div><span>MAPA OPERACIONAL</span><h3>Configuração por pista</h3></div><b>IFR</b></div>
-            <label class="operational-label" for="layout-airport">Aeródromo em foco</label>
-            <select id="layout-airport" class="layout-select" aria-label="Aeródromo do mapa IFR"></select>
-            <div id="layout-runway-grid" class="layout-runway-grid" aria-label="Pistas disponíveis"></div>
+            <p class="layout-intro">Configuração integrada da TMA São Paulo, baseada nos três aeródromos principais.</p>
+            <div class="tma-runway-config" aria-label="Configuração conjunta das pistas">
+              <label><span>SBSP</span><select id="layout-runway-sbsp" aria-label="Pista selecionada em Congonhas"><option value="17">17</option><option value="35">35</option></select></label>
+              <label><span>SBGR</span><select id="layout-runway-sbgr" aria-label="Pista selecionada em Guarulhos"><option value="10">10</option><option value="28">28</option></select></label>
+              <label><span>SBKP</span><select id="layout-runway-sbkp" aria-label="Pista selecionada em Viracopos"><option value="15">15</option><option value="33">33</option></select></label>
+            </div>
+            <div id="layout-config-code" class="layout-config-code">SP17 · GR10 · KP15</div>
+            <label class="operational-label" for="layout-airport">Referência de detalhes</label>
+            <select id="layout-airport" class="layout-select" aria-label="Aeródromo em foco no mapa IFR"></select>
             <div class="layout-type-row" aria-label="Tipos de procedimento">
               <label><input class="layout-type-filter" type="checkbox" value="SID" checked><i class="sid"></i> SID</label>
               <label><input class="layout-type-filter" type="checkbox" value="STAR" checked><i class="star"></i> STAR</label>

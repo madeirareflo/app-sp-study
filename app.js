@@ -114,7 +114,7 @@
       operationalPanel.hidden=destination!=="operational";
       if(destination==="terminal"){panel.classList.remove("is-collapsed");toggle.setAttribute("aria-expanded","true");map.flyTo([-23.45,-46.95],8,{duration:.35});return;}
       if(destination==="map"){map.flyTo([-23.45,-46.95],8,{duration:.35});return;}
-      if(destination==="operational"){panel.classList.remove("is-collapsed");toggle.setAttribute("aria-expanded","true");renderLayoutRunways();updateLayoutStatus();return;}
+      if(destination==="operational"){panel.classList.remove("is-collapsed");toggle.setAttribute("aria-expanded","true");renderOperationalConfiguration();updateLayoutStatus();return;}
       const target=destination==="procedures" ? $("#procedures-section") : $("#atcsmac-section");
       target?.scrollIntoView({behavior:"smooth",block:"start"});
       if(destination==="atcsmac") showAtcsmac();
@@ -122,25 +122,37 @@
     updateTerminalPanel();
   }
 
-  const layoutRunways = new Set();
+  const primaryTmaAirports = ["SBSP","SBGR","SBKP"];
   const procedureCategory = procedure => procedure.type === "SID" ? "SID" : procedure.type === "STAR" ? "STAR" : /RNP|RNAV/i.test(procedure.title||"") ? "RNP" : /ILS|LOC/i.test(procedure.title||"") ? "ILS" : "IAC";
-  function renderLayoutRunways() {
-    const airportId=$("#layout-airport")?.value || "SBSP";
-    const runways=[...new Set(allProcedures.filter(item=>item.airport===airportId).flatMap(item=>item.runways||[]))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
-    if (![...layoutRunways].some(runway=>runways.includes(runway))) { layoutRunways.clear(); runways.forEach(runway=>layoutRunways.add(runway)); }
-    const grid=$("#layout-runway-grid");
-    grid.innerHTML=runways.length ? runways.map(runway=>`<button type="button" class="layout-runway-button ${layoutRunways.has(runway)?"is-active":""}" data-runway="${esc(runway)}">${esc(runway)}</button>`).join("") : '<span class="empty-selection">Sem pista catalogada.</span>';
-    grid.querySelectorAll("[data-runway]").forEach(button=>button.onclick=()=>{const runway=button.dataset.runway;if(layoutRunways.has(runway))layoutRunways.delete(runway);else layoutRunways.add(runway);if(!layoutRunways.size)runways.forEach(item=>layoutRunways.add(item));renderLayoutRunways();updateLayoutStatus();});
+  function currentTmaConfiguration() {
+    const sp=$("#layout-runway-sbsp")?.value || "17";
+    const gr=$("#layout-runway-sbgr")?.value || "10";
+    const kp=$("#layout-runway-sbkp")?.value || "15";
+    return {sp,gr,kp,code:`SP${sp}_GR${gr}_KP${kp}`,display:`SP${sp} · GR${gr} · KP${kp}`};
+  }
+  function procedureMatchesRunway(procedure, configuration) {
+    const runway = {SBSP:configuration.sp,SBGR:configuration.gr,SBKP:configuration.kp}[procedure.airport];
+    return Boolean(runway) && (procedure.runways||[]).some(item=>String(item).startsWith(String(runway)));
+  }
+  function renderOperationalConfiguration() {
+    const code=$("#layout-config-code");
+    if(code) code.textContent=currentTmaConfiguration().display;
   }
   function selectedLayoutTypes() { return new Set([...document.querySelectorAll(".layout-type-filter:checked")].map(input=>input.value)); }
   function matchingOperationalProcedures() {
-    const airportId=$("#layout-airport")?.value || "SBSP", types=selectedLayoutTypes();
-    return allProcedures.filter(procedure=>procedure.airport===airportId && layoutRunways.has((procedure.runways||[])[0]) && types.has(procedureCategory(procedure)));
+    const configuration=currentTmaConfiguration(), types=selectedLayoutTypes();
+    return allProcedures.filter(procedure=>{
+      if(!primaryTmaAirports.includes(procedure.airport) || !types.has(procedureCategory(procedure))) return false;
+      if((procedure.configurations||[]).includes(configuration.code)) return true;
+      return !(procedure.configurations||[]).length && procedureMatchesRunway(procedure,configuration);
+    });
   }
   function updateLayoutStatus() {
     const status=$("#layout-status"); if(!status)return;
     const procedures=matchingOperationalProcedures(), confirmed=procedures.reduce((total,procedure)=>total+(routeSequences[procedure.id]||[]).length,0);
-    status.textContent=`${procedures.length} carta(s) selecionada(s) · ${confirmed} trajetória(s) com sequência confirmada.`;
+    const configuration=currentTmaConfiguration();
+    renderOperationalConfiguration();
+    status.textContent=`${configuration.display} · ${procedures.length} carta(s) selecionada(s) · ${confirmed} trajetória(s) com sequência confirmada.`;
   }
   function applyOperationalLayout() {
     operational.clear();
@@ -148,17 +160,21 @@
     let rendered=0;
     matchingOperationalProcedures().forEach(procedure=>(routeSequences[procedure.id]||[]).forEach((_,sequenceNo)=>{operational.set(`operational:${procedure.id}:${sequenceNo}`,{procedure,sequenceNo});rendered++;}));
     rebuildRoutes();
-    $("#layout-status").textContent=rendered ? `${rendered} trajetória(s) confirmada(s) aplicada(s) ao mapa.` : "Nenhuma trajetória confirmada corresponde à configuração atual; as cartas continuam disponíveis na biblioteca.";
+    const configuration=currentTmaConfiguration();
+    $("#layout-status").textContent=rendered ? `${configuration.display} · ${rendered} trajetória(s) confirmada(s) aplicada(s) ao mapa.` : `${configuration.display} · nenhuma trajetória confirmada corresponde à configuração atual; as cartas continuam disponíveis na biblioteca.`;
   }
   function setupOperationalLayout() {
     const airport=$("#layout-airport"); if(!airport)return;
-    airport.innerHTML=[...targetAirports].map(id=>{const item=airports.find(entry=>entry.id===id);return `<option value="${id}">${id} — ${esc(item?.name||id)}</option>`;}).join("");
-    airport.onchange=()=>{const procedureAirport=$("#procedure-airport");procedureAirport.value=airport.value;options();layoutRunways.clear();renderLayoutRunways();updateLayoutStatus();};
+    airport.innerHTML=primaryTmaAirports.map(id=>{const item=airports.find(entry=>entry.id===id);return `<option value="${id}">${id} — ${esc(item?.name||id)}</option>`;}).join("");
+    airport.onchange=()=>{const procedureAirport=$("#procedure-airport");procedureAirport.value=airport.value;options();updateLayoutStatus();};
+    ["#layout-runway-sbsp","#layout-runway-sbgr","#layout-runway-sbkp"].forEach(selector=>{
+      const control=$(selector); if(control) control.onchange=()=>{renderOperationalConfiguration();updateLayoutStatus();};
+    });
     document.querySelectorAll(".layout-type-filter").forEach(input=>input.onchange=updateLayoutStatus);
     $("#layout-enabled").onchange=()=>{if(!$("#layout-enabled").checked){operational.clear();rebuildRoutes();}updateLayoutStatus();};
     $("#layout-apply").onclick=applyOperationalLayout;
     $("#layout-clear").onclick=()=>{operational.clear();rebuildRoutes();$("#layout-status").textContent="Camadas do Mapa IFR removidas.";};
-    renderLayoutRunways();updateLayoutStatus();
+    renderOperationalConfiguration();updateLayoutStatus();
   }
   function setupProcedures() {
     const airport=$("#procedure-airport"); airport.innerHTML=[...targetAirports].map(id=>{const item=airports.find(a=>a.id===id);return `<option value="${id}">${id} — ${esc(item?.name||id)}</option>`;}).join("");
