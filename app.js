@@ -9,6 +9,12 @@
     ["SBJD","Jundiaí",-23.1807,-46.9439,"Aeródromo IFR / VFR"], ["SDAI","Americana",-22.7556,-47.2697,"Aeródromo VFR / IAC"], ["SDCO","Sorocaba",-23.4781,-47.4900,"Aeródromo VFR / IAC"]
   ].map(([id,name,lat,lon,type]) => ({id,name,lat,lon,type,source:"Posição de referência geográfica; confirme ARP, pista e operação na AIS/AIP vigente."}));
   const targetAirports = new Set(["SBSP","SBGR","SBKP","SBSJ","SBJH","SBJD","SDCO"]);
+  const primaryTmaAirports = ["SBSP","SBGR","SBKP"];
+  const procedureRunwayGroups = {
+    SBSP:[{id:"17R/35L",label:"17R / 35L",runways:["17","17R","35L"]},{id:"17L/35R",label:"17L / 35R",runways:["17L","35","35R"]}],
+    SBGR:[{id:"10L/28R",label:"10L / 28R",runways:["10","10L","28R"]},{id:"10R/28L",label:"10R / 28L",runways:["10R","28","28L"]}],
+    SBKP:[{id:"15",label:"15",runways:["15"]},{id:"33",label:"33",runways:["33"]}]
+  };
   const routeSequences = {
     PROC_001:[["KOMGU","SP048"],["LUVDI","SP048"],["SP048","SP049"]],
     PROC_002:[["KOMGU","GERSU"],["LUVDI","GERSU"],["GERSU","URUTA","SBSP"]],
@@ -70,9 +76,39 @@
     input.addEventListener("input",()=>{const q=input.value.trim().toLowerCase(); if(!q){box.style.display="none";return;} const hits=[...airports,...spWaypoints].filter(item=>`${item.id} ${item.name||""}`.toLowerCase().includes(q)).slice(0,12); box.innerHTML=hits.map(item=>`<button class="suggestion-item" data-point="${esc(item.id)}"><span><b>${esc(item.id)}</b> — ${esc(item.name || item.type || "FIX")}</span><span class="coord-tag">${item.lat.toFixed(2)}, ${item.lon.toFixed(2)}</span></button>`).join("");box.style.display=hits.length?"block":"none";box.querySelectorAll("[data-point]").forEach(button=>button.onclick=()=>{const item=resolve(button.dataset.point);if(item){input.value=item.id;box.style.display="none";choosePoint(item);}});});
     document.addEventListener("click",event=>{if(!event.target.closest(".search-container"))box.style.display="none";});
   }
-  function options() {
-    const airport=$("#procedure-airport").value, type=$("#procedure-type").value, select=$("#procedure-select"), transition=$("#procedure-transition");
-    const list=allProcedures.filter(item=>item.airport===airport&&item.type===type); select.innerHTML=list.length?list.map(item=>`<option value="${item.id}">${esc(item.title)} · pista ${esc(item.runways.join("/"))}</option>`).join(""):'<option value="">Nenhuma carta cadastrada</option>';
+  function currentProcedureAirport() { return $("#procedure-airport")?.value || "SBSP"; }
+  function currentProcedureRunway() { return $("#procedure-runway")?.value || procedureRunwayGroups[currentProcedureAirport()][0].id; }
+  function currentProcedureType() { return $("#procedure-type")?.value || "STAR"; }
+  function procedureMatchesSelectedRunway(procedure, airport=currentProcedureAirport(), runwayId=currentProcedureRunway()) {
+    const group=(procedureRunwayGroups[airport]||[]).find(item=>item.id===runwayId);
+    return Boolean(group) && (procedure.runways||[]).some(runway=>group.runways.includes(String(runway)));
+  }
+  function matchingProcedureSelection() {
+    const airport=currentProcedureAirport(), type=currentProcedureType();
+    return allProcedures.filter(item=>item.airport===airport && item.type===type && procedureMatchesSelectedRunway(item));
+  }
+  function renderProcedureRunways() {
+    const airport=currentProcedureAirport(), options=procedureRunwayGroups[airport]||[], selected=$("#procedure-runway");
+    if(!options.some(option=>option.id===selected.value)) selected.value=options[0]?.id||"";
+    const container=$("#procedure-runway-options");
+    container.innerHTML=options.map(option=>`<button type="button" class="procedure-choice ${option.id===selected.value?"is-active":""}" data-procedure-runway="${esc(option.id)}" aria-pressed="${option.id===selected.value}">${esc(option.label)}</button>`).join("");
+    container.querySelectorAll("[data-procedure-runway]").forEach(button=>button.onclick=()=>{selected.value=button.dataset.procedureRunway;renderProcedureRunways();optionsProcedure();});
+  }
+  function setProcedureAirport(airport) {
+    if(!primaryTmaAirports.includes(airport)) return;
+    $("#procedure-airport").value=airport;
+    document.querySelectorAll("[data-procedure-airport]").forEach(button=>{const active=button.dataset.procedureAirport===airport;button.classList.toggle("is-active",active);button.setAttribute("aria-pressed",String(active));});
+    renderProcedureRunways();optionsProcedure();
+  }
+  function setProcedureType(type) {
+    $("#procedure-type").value=type;
+    document.querySelectorAll("[data-procedure-type]").forEach(button=>{const active=button.dataset.procedureType===type;button.classList.toggle("is-active",active);button.setAttribute("aria-pressed",String(active));});
+    optionsProcedure();
+  }
+  function optionsProcedure() {
+    const select=$("#procedure-select"), transition=$("#procedure-transition"), previous=select.value;
+    const list=matchingProcedureSelection(); select.innerHTML=list.length?list.map(item=>`<option value="${item.id}">${esc(item.title)}</option>`).join(""):'<option value="">Nenhuma carta compatível</option>';
+    if(list.some(item=>item.id===previous)) select.value=previous;
     const procedure=list.find(item=>item.id===select.value)||list[0]; const sequences=routeSequences[procedure?.id] || [];
     transition.innerHTML=sequences.length?sequences.map((_,n)=>`<option value="${n}">Trajeto ${n+1}</option>`).join(""):'<option value="-1">Sequência a confirmar</option>';
     $("#add-procedure").disabled=!procedure;
@@ -88,9 +124,9 @@
   }
 
   function updateTerminalPanel() {
-    const airportId = $("#procedure-airport")?.value || "SBSP";
-    const type = $("#procedure-type")?.value || "STAR";
-    const count = allProcedures.filter(item=>item.airport===airportId && item.type===type).length;
+    const airportId = currentProcedureAirport();
+    const type = currentProcedureType();
+    const count = matchingProcedureSelection().length;
     const airport = airports.find(item=>item.id===airportId);
     const focusAirport = $("#terminal-airport"), focusCount = $("#terminal-procedure-count"), focusMode = $("#terminal-mode"), content = $("#terminal-view-content");
     if (focusAirport) focusAirport.textContent = airport ? `${airport.id} · ${airport.name}` : airportId;
@@ -122,7 +158,6 @@
     updateTerminalPanel();
   }
 
-  const primaryTmaAirports = ["SBSP","SBGR","SBKP"];
   const procedureCategory = procedure => procedure.type === "SID" ? "SID" : procedure.type === "STAR" ? "STAR" : /RNP|RNAV/i.test(procedure.title||"") ? "RNP" : /ILS|LOC/i.test(procedure.title||"") ? "ILS" : "IAC";
   function currentTmaConfiguration() {
     const sp=$("#layout-runway-sbsp")?.value || "17";
@@ -166,7 +201,7 @@
   function setupOperationalLayout() {
     const airport=$("#layout-airport"); if(!airport)return;
     airport.innerHTML=primaryTmaAirports.map(id=>{const item=airports.find(entry=>entry.id===id);return `<option value="${id}">${id} — ${esc(item?.name||id)}</option>`;}).join("");
-    airport.onchange=()=>{const procedureAirport=$("#procedure-airport");procedureAirport.value=airport.value;options();updateLayoutStatus();};
+    airport.onchange=()=>{setProcedureAirport(airport.value);updateLayoutStatus();};
     ["#layout-runway-sbsp","#layout-runway-sbgr","#layout-runway-sbkp"].forEach(selector=>{
       const control=$(selector); if(control) control.onchange=()=>{renderOperationalConfiguration();updateLayoutStatus();};
     });
@@ -177,9 +212,11 @@
     renderOperationalConfiguration();updateLayoutStatus();
   }
   function setupProcedures() {
-    const airport=$("#procedure-airport"); airport.innerHTML=[...targetAirports].map(id=>{const item=airports.find(a=>a.id===id);return `<option value="${id}">${id} — ${esc(item?.name||id)}</option>`;}).join("");
-    [airport,$("#procedure-type"),$("#procedure-select")].forEach(control=>control.addEventListener("change",options));
-    $("#add-procedure").onclick=()=>{const p=allProcedures.find(item=>item.id===$("#procedure-select").value); const number=Number($("#procedure-transition").value); if(p) addProcedure(p,number);}; options();
+    document.querySelectorAll("[data-procedure-airport]").forEach(button=>button.onclick=()=>setProcedureAirport(button.dataset.procedureAirport));
+    document.querySelectorAll("[data-procedure-type]").forEach(button=>button.onclick=()=>setProcedureType(button.dataset.procedureType));
+    $("#procedure-select").addEventListener("change",optionsProcedure);
+    $("#add-procedure").onclick=()=>{const p=allProcedures.find(item=>item.id===$("#procedure-select").value); const number=Number($("#procedure-transition").value); if(p) addProcedure(p,number);};
+    renderProcedureRunways();optionsProcedure();
   }
   function addProcedure(procedure, sequenceNo) { active.set(`${procedure.id}:${sequenceNo}`,{procedure,sequenceNo}); rebuildRoutes(); renderActive(); showProcedure(procedure,sequenceNo); }
   function showProcedure(procedure, sequenceNo) {

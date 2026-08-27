@@ -102,7 +102,22 @@ button,input,select { font:inherit; }
 .selected-point-row { display:flex; align-items:center; justify-content:space-between; gap:9px; padding:8px 9px; border:1px solid #393939; border-radius:4px; background:#262626; font-size:12px; }
 .selected-point-row small { color:var(--muted); }
 .selected-point-row button { border:1px solid #7a3333; border-radius:3px; padding:3px 6px; color:#ff9d9d; background:transparent; cursor:pointer; }
+.procedure-intro { margin:0 0 10px; color:#9eb7be; font-size:11px; line-height:1.4; }
 .procedure-controls { display:grid; gap:8px; }
+.procedure-flow { gap:7px; }
+.procedure-step { padding:9px; border:1px solid #315762; border-radius:6px; background:linear-gradient(145deg,#15282e,#0d1b20); }
+.step-heading { display:flex; align-items:baseline; gap:7px; margin-bottom:7px; }
+.step-heading span { color:#65d7e7; font:800 8px/1 ui-monospace,Consolas,monospace; letter-spacing:.1em; }
+.step-heading h3 { margin:0; color:#e8f8fb; font-size:11px; }
+.procedure-choice-grid { display:grid; gap:5px; }
+.airport-choice-grid,.type-choice-grid { grid-template-columns:repeat(3,1fr); }
+.runway-choice-grid { grid-template-columns:repeat(2,1fr); }
+.procedure-choice { min-height:31px; padding:5px 6px; border:1px solid #385e68; border-radius:4px; color:#aec8ce; background:#102127; cursor:pointer; font:800 10px/1.1 ui-monospace,Consolas,monospace; }
+.procedure-choice:hover { border-color:#68dbea; color:#eaffff; }
+.procedure-choice.is-active { border-color:#6ee5f5; color:#052126; background:linear-gradient(135deg,#78e4f0,#45b9ca); box-shadow:0 0 0 1px #08343c inset; }
+.procedure-final-step { display:grid; gap:7px; }
+.procedure-final-step .step-heading { margin-bottom:0; }
+.procedure-final-step .search-input-field { min-width:0; }
 .action-btn { padding:10px 12px; color:#06242a; border:0; border-radius:4px; background:var(--cyan); cursor:pointer; font-weight:800; }
 .action-btn:hover { background:#1578c5; }
 .action-btn:disabled { opacity:.55; cursor:not-allowed; }

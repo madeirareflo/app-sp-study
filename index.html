@@ -9,7 +9,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' https://unpkg.com 'unsafe-inline'; img-src 'self' data: https://*.tile.openstreetmap.org; connect-src 'self' https://*.tile.openstreetmap.org; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests">
   <title>Visualizador TMA São Paulo</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=3336f5d">
+  <link rel="stylesheet" href="styles.css?v=cascade4">
 </head>
 <body>
   <header class="app-bar">
@@ -93,12 +93,37 @@
 
       <section id="procedures-section" class="sidebar-section procedure-section">
         <h2>Procedimentos IFR</h2>
-        <div class="procedure-controls">
-          <select id="procedure-airport" class="search-input-field" aria-label="Aeródromo"></select>
-          <select id="procedure-type" class="search-input-field" aria-label="Tipo de procedimento"><option value="STAR">STAR</option><option value="SID">SID</option><option value="IAC">IAC</option></select>
-          <select id="procedure-select" class="search-input-field" aria-label="Procedimento"></select>
-          <select id="procedure-transition" class="search-input-field" aria-label="Transição"></select>
-          <button id="add-procedure" class="action-btn" type="button">Adicionar procedimento</button>
+        <p class="procedure-intro">Escolha a operação passo a passo. A lista final exibe somente cartas compatíveis.</p>
+        <div class="procedure-controls procedure-flow">
+          <input id="procedure-airport" type="hidden" value="SBSP">
+          <input id="procedure-runway" type="hidden" value="17R/35L">
+          <input id="procedure-type" type="hidden" value="STAR">
+          <section class="procedure-step" aria-labelledby="procedure-step-airport">
+            <div class="step-heading"><span>PASSO 1</span><h3 id="procedure-step-airport">Aeródromo</h3></div>
+            <div class="procedure-choice-grid airport-choice-grid" role="group" aria-label="Aeródromo">
+              <button type="button" class="procedure-choice is-active" data-procedure-airport="SBSP" aria-pressed="true">SBSP</button>
+              <button type="button" class="procedure-choice" data-procedure-airport="SBGR" aria-pressed="false">SBGR</button>
+              <button type="button" class="procedure-choice" data-procedure-airport="SBKP" aria-pressed="false">SBKP</button>
+            </div>
+          </section>
+          <section class="procedure-step" aria-labelledby="procedure-step-runway">
+            <div class="step-heading"><span>PASSO 2</span><h3 id="procedure-step-runway">Pista ativa</h3></div>
+            <div id="procedure-runway-options" class="procedure-choice-grid runway-choice-grid" role="group" aria-label="Pista ativa"></div>
+          </section>
+          <section class="procedure-step" aria-labelledby="procedure-step-type">
+            <div class="step-heading"><span>PASSO 3</span><h3 id="procedure-step-type">Tipo de procedimento</h3></div>
+            <div class="procedure-choice-grid type-choice-grid" role="group" aria-label="Tipo de procedimento">
+              <button type="button" class="procedure-choice" data-procedure-type="SID" aria-pressed="false">SID</button>
+              <button type="button" class="procedure-choice is-active" data-procedure-type="STAR" aria-pressed="true">STAR</button>
+              <button type="button" class="procedure-choice" data-procedure-type="IAC" aria-pressed="false">IAC</button>
+            </div>
+          </section>
+          <section class="procedure-step procedure-final-step" aria-labelledby="procedure-step-select">
+            <div class="step-heading"><span>PASSO 4</span><h3 id="procedure-step-select">Procedimento</h3></div>
+            <select id="procedure-select" class="search-input-field" aria-label="Procedimento específico"></select>
+            <select id="procedure-transition" class="search-input-field" aria-label="Trajeto ou transição"></select>
+            <button id="add-procedure" class="action-btn" type="button">Adicionar camada ao mapa</button>
+          </section>
         </div>
         <div id="active-procedures" class="selected-points"><span class="empty-selection">Nenhum procedimento ativo.</span></div>
       </section>
@@ -113,8 +138,8 @@
     </aside>
   </main>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="data/analysis-data.js?v=3336f5d"></script>
-  <script src="data/procedure-routes.js?v=3336f5d"></script>
-  <script src="app.js?v=3336f5d"></script>
+  <script src="data/analysis-data.js?v=cascade4"></script>
+  <script src="data/procedure-routes.js?v=cascade4"></script>
+  <script src="app.js?v=cascade4"></script>
 </body>
 </html>
