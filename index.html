@@ -9,7 +9,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' https://unpkg.com 'unsafe-inline'; img-src 'self' data: https://*.tile.openstreetmap.org; connect-src 'self' https://*.tile.openstreetmap.org; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests">
   <title>Visualizador TMA São Paulo</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=cascade4">
+  <link rel="stylesheet" href="styles.css?v=terminal5">
 </head>
 <body>
   <header class="app-bar">
@@ -29,6 +29,43 @@
       <div class="map-title"><span class="live-dot"></span><b>TMA SÃO PAULO</b><small>visualizador didático · base geográfica</small></div>
       <div class="map-tools"><button id="recenter" title="Centralizar TMA São Paulo">⌖</button><button id="toggleLabels" title="Mostrar ou ocultar nomes">Aa</button><button id="toggleAtcsmac" title="Abrir orientação ATCSMAC">ALT</button></div>
       <div class="map-note">Procedimentos e setores usam apenas coordenadas carregadas do acervo. Confirme sempre carta, AIS/AIP e NOTAM vigentes.</div>
+      <section id="terminal-workspace" class="terminal-workspace" hidden aria-label="Visualização da Terminal São Paulo">
+        <div class="terminal-workspace-header">
+          <div><span>TERMINAL SÃO PAULO · ESTUDO</span><h2>Visual operacional da TMA SP</h2></div>
+          <div class="terminal-workspace-actions"><span id="terminal-config-label">17 · 10 · 15</span><button id="close-terminal-workspace" type="button">Voltar ao mapa</button></div>
+        </div>
+        <div class="terminal-radar" aria-label="Representação visual didática da Terminal São Paulo">
+          <svg viewBox="0 0 1200 760" role="img" aria-label="Traçados visuais didáticos da TMA São Paulo">
+            <defs><pattern id="terminal-grid" width="42" height="42" patternUnits="userSpaceOnUse"><path d="M 42 0 L 0 0 0 42" fill="none" stroke="#dfe9e9" stroke-opacity=".12" stroke-width="1"/></pattern><filter id="terminal-glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+            <rect width="1200" height="760" fill="url(#terminal-grid)"/>
+            <path class="terminal-boundary" d="M118 136 L392 84 L876 108 L1080 245 L1050 577 L773 682 L348 650 L144 505 Z"/>
+            <path class="terminal-route route-cyan" d="M90 368 C215 300 287 230 420 226 S650 260 780 194 S1030 186 1160 250"/>
+            <path class="terminal-route route-green" d="M68 548 C196 491 316 528 426 430 S636 300 760 382 S978 503 1156 450"/>
+            <path class="terminal-route route-amber" d="M212 716 C305 596 392 523 543 480 S748 475 925 626"/>
+            <path class="terminal-route route-magenta" d="M322 92 C376 206 408 303 535 330 S760 345 852 520"/>
+            <g class="terminal-nodes" filter="url(#terminal-glow)"><circle cx="446" cy="408" r="8"/><circle cx="678" cy="360" r="8"/><circle cx="814" cy="465" r="8"/><circle cx="568" cy="498" r="8"/></g>
+            <g class="terminal-runway"><path d="M447 415 l46 24"/><path d="M715 351 l53 -19"/><path d="M554 503 l-21 46"/></g>
+            <g class="terminal-labels"><text x="426" y="393">SBSP</text><text x="689" y="343">SBGR</text><text x="820" y="451">SBKP</text><text x="258" y="194">TMA SP</text><text x="898" y="602">REA / SETOR</text></g>
+          </svg>
+          <div class="terminal-radar-status"><span></span> VISUALIZAÇÃO DIDÁTICA · CAMADAS CONFIRMADAS</div>
+          <div class="terminal-radar-legend"><i class="cyan"></i> chegada <i class="green"></i> saída <i class="amber"></i> coordenação <i class="magenta"></i> fluxo associado</div>
+        </div>
+        <aside class="terminal-config-card" aria-label="Configurações da Terminal São Paulo">
+          <div class="terminal-card-heading"><span>CONFIGURAÇÃO TMA</span><strong>Selecione a combinação de pistas</strong></div>
+          <div id="terminal-config-grid" class="terminal-config-grid">
+            <button type="button" class="terminal-config-button is-active" data-terminal-configuration="17-10-15">17 · 10 · 15</button>
+            <button type="button" class="terminal-config-button" data-terminal-configuration="17-10-33">17 · 10 · 33</button>
+            <button type="button" class="terminal-config-button" data-terminal-configuration="17-28-15">17 · 28 · 15</button>
+            <button type="button" class="terminal-config-button" data-terminal-configuration="17-28-33">17 · 28 · 33</button>
+            <button type="button" class="terminal-config-button" data-terminal-configuration="35-10-15">35 · 10 · 15</button>
+            <button type="button" class="terminal-config-button" data-terminal-configuration="35-10-33">35 · 10 · 33</button>
+            <button type="button" class="terminal-config-button" data-terminal-configuration="35-28-15">35 · 28 · 15</button>
+            <button type="button" class="terminal-config-button" data-terminal-configuration="35-28-33">35 · 28 · 33</button>
+          </div>
+          <p id="terminal-config-status">SBSP 17 · SBGR 10 · SBKP 15</p>
+          <small>As rotas no mapa são aplicadas apenas quando existe uma sequência confirmada no acervo.</small>
+        </aside>
+      </section>
       <aside id="terminal-panel" class="terminal-panel" aria-label="Painel de comando da Terminal SP">
         <button id="terminal-panel-toggle" type="button" aria-expanded="true" aria-controls="terminal-panel-content" title="Recolher painel da Terminal SP">‹</button>
         <div id="terminal-panel-content">
@@ -138,8 +175,8 @@
     </aside>
   </main>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="data/analysis-data.js?v=cascade4"></script>
-  <script src="data/procedure-routes.js?v=cascade4"></script>
-  <script src="app.js?v=cascade4"></script>
+  <script src="data/analysis-data.js?v=terminal5"></script>
+  <script src="data/procedure-routes.js?v=terminal5"></script>
+  <script src="app.js?v=terminal5"></script>
 </body>
 </html>

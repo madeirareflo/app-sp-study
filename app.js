@@ -148,7 +148,8 @@
       document.querySelectorAll(".app-nav-button").forEach(item=>item.classList.toggle("is-active",item.dataset.jump===destination));
       const operationalPanel=$("#operational-layout");
       operationalPanel.hidden=destination!=="operational";
-      if(destination==="terminal"){panel.classList.remove("is-collapsed");toggle.setAttribute("aria-expanded","true");map.flyTo([-23.45,-46.95],8,{duration:.35});return;}
+      setTerminalWorkspace(destination==="terminal");
+      if(destination==="terminal"){updateTerminalWorkspace();return;}
       if(destination==="map"){map.flyTo([-23.45,-46.95],8,{duration:.35});return;}
       if(destination==="operational"){panel.classList.remove("is-collapsed");toggle.setAttribute("aria-expanded","true");renderOperationalConfiguration();updateLayoutStatus();return;}
       const target=destination==="procedures" ? $("#procedures-section") : $("#atcsmac-section");
@@ -198,6 +199,43 @@
     const configuration=currentTmaConfiguration();
     $("#layout-status").textContent=rendered ? `${configuration.display} · ${rendered} trajetória(s) confirmada(s) aplicada(s) ao mapa.` : `${configuration.display} · nenhuma trajetória confirmada corresponde à configuração atual; as cartas continuam disponíveis na biblioteca.`;
   }
+  function setTerminalWorkspace(active) {
+    const workspace=$("#terminal-workspace");
+    if(!workspace) return;
+    workspace.hidden=!active;
+    $("#app-layout").classList.toggle("terminal-mode",active);
+    window.setTimeout(()=>map.invalidateSize(),80);
+  }
+  function updateTerminalWorkspace() {
+    const configuration=currentTmaConfiguration();
+    const compact=`${configuration.sp} · ${configuration.gr} · ${configuration.kp}`;
+    const label=$("#terminal-config-label"), status=$("#terminal-config-status");
+    if(label) label.textContent=compact;
+    if(status) status.textContent=`SBSP ${configuration.sp} · SBGR ${configuration.gr} · SBKP ${configuration.kp}`;
+    document.querySelectorAll("[data-terminal-configuration]").forEach(button=>{
+      const active=button.dataset.terminalConfiguration===`${configuration.sp}-${configuration.gr}-${configuration.kp}`;
+      button.classList.toggle("is-active",active);
+      button.setAttribute("aria-pressed",String(active));
+    });
+  }
+  function setupTerminalWorkspace() {
+    $("#close-terminal-workspace").onclick=()=>{
+      setTerminalWorkspace(false);
+      document.querySelectorAll(".app-nav-button").forEach(item=>item.classList.toggle("is-active",item.dataset.jump==="map"));
+      map.flyTo([-23.45,-46.95],8,{duration:.35});
+    };
+    document.querySelectorAll("[data-terminal-configuration]").forEach(button=>button.onclick=()=>{
+      const [sp,gr,kp]=button.dataset.terminalConfiguration.split("-");
+      $("#layout-runway-sbsp").value=sp;
+      $("#layout-runway-sbgr").value=gr;
+      $("#layout-runway-sbkp").value=kp;
+      $("#layout-enabled").checked=true;
+      renderOperationalConfiguration();
+      applyOperationalLayout();
+      updateTerminalWorkspace();
+    });
+    updateTerminalWorkspace();
+  }
   function setupOperationalLayout() {
     const airport=$("#layout-airport"); if(!airport)return;
     airport.innerHTML=primaryTmaAirports.map(id=>{const item=airports.find(entry=>entry.id===id);return `<option value="${id}">${id} — ${esc(item?.name||id)}</option>`;}).join("");
@@ -238,5 +276,5 @@
   $("#recenter").onclick=()=>map.flyTo([-23.45,-46.95],8,{duration:.5});
   $("#toggleLabels").onclick=()=>{labelsVisible=!labelsVisible;document.querySelectorAll(".airport-marker span").forEach(el=>el.style.display=labelsVisible?"":"none");rebuildRoutes();};
   $("#toggleAtcsmac").onclick=showAtcsmac; $("#openAtcsmac").onclick=showAtcsmac;
-  renderAirports(); buildSearch(); setupProcedures(); setupOperationalLayout(); setupTerminalPanel(); loadData(); L.control.zoom({position:"bottomleft"}).addTo(map);L.control.layers({"OpenStreetMap":base},{"Aeródromos":airportsLayer,"Pontos selecionados":selectionLayer,"Procedimentos por pista":proceduresLayer,"TMA São Paulo · contexto ATCSMAC":tmaLayer},{position:"topright",collapsed:true}).addTo(map);
+  renderAirports(); buildSearch(); setupProcedures(); setupOperationalLayout(); setupTerminalWorkspace(); setupTerminalPanel(); loadData(); L.control.zoom({position:"bottomleft"}).addTo(map);L.control.layers({"OpenStreetMap":base},{"Aeródromos":airportsLayer,"Pontos selecionados":selectionLayer,"Procedimentos por pista":proceduresLayer,"TMA São Paulo · contexto ATCSMAC":tmaLayer},{position:"topright",collapsed:true}).addTo(map);
 })();
